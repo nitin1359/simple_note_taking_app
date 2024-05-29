@@ -1,12 +1,17 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 import 'note.dart';
+import 'constants/colors.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -49,6 +54,11 @@ class _NoteListScreenState extends State<NoteListScreen> {
     });
   }
 
+  getRandomColor() {
+    Random random = Random();
+    return backgroundColors[random.nextInt(backgroundColors.length)];
+  }
+
   Future<void> _addNoteDialog(BuildContext context) async {
     String title = '';
     String content = '';
@@ -87,6 +97,12 @@ class _NoteListScreenState extends State<NoteListScreen> {
                 Navigator.of(context).pop();
               },
               child: const Text('Add'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -134,7 +150,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
                 }
                 Navigator.of(context).pop();
               },
-              child: const Text('Cancel'),
+              child: const Text('Save'),
             ),
             TextButton(
               onPressed: () {
@@ -142,6 +158,12 @@ class _NoteListScreenState extends State<NoteListScreen> {
                 Navigator.of(context).pop();
               },
               child: const Text('Delete'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -167,8 +189,15 @@ class _NoteListScreenState extends State<NoteListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade900,
       appBar: AppBar(
-        title: const Text('Notes'),
+        backgroundColor: Colors.grey.shade900,
+        title: const Text(
+          'Notes',
+          style: TextStyle(
+              color: Colors.white, fontSize: 35, fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -176,9 +205,50 @@ class _NoteListScreenState extends State<NoteListScreen> {
               itemCount: _notes.length,
               itemBuilder: (context, index) {
                 final note = _notes[index];
-                return ListTile(
-                  title: Text(note.title),
-                  onTap: () => _editNoteDialog(context, note),
+                return Card(
+                  // margin: const EdgeInsets.only(bottom: 15),
+                  color: getRandomColor(),
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: ListTile(
+                      onTap: () => _editNoteDialog(context, note),
+                      title: RichText(
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        text: TextSpan(
+                            text: '${note.title} \n',
+                            style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                height: 1.5),
+                            children: [
+                              TextSpan(
+                                text: note.content,
+                                style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.normal,
+                                    fontSize: 14,
+                                    height: 1.5),
+                              )
+                            ]),
+                      ),
+                      trailing: IconButton(
+                        onPressed: () async {
+                          final result = await confirmDialog(context);
+                          if (result != null && result) {
+                            _deleteNote(note.id!);
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.delete,
+                        ),
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
@@ -187,5 +257,55 @@ class _NoteListScreenState extends State<NoteListScreen> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Future<dynamic> confirmDialog(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Colors.grey.shade900,
+            icon: const Icon(
+              Icons.info,
+              color: Colors.grey,
+            ),
+            title: const Text(
+              'Do you really want to remove this?',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context, true);
+                      },
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green),
+                      child: const SizedBox(
+                        width: 60,
+                        child: Text(
+                          'Yes',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )),
+                  ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context, false);
+                      },
+                      style:
+                          ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      child: const SizedBox(
+                        width: 60,
+                        child: Text(
+                          'No',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )),
+                ]),
+          );
+        });
   }
 }
